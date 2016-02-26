@@ -1,0 +1,74 @@
+group 'jp.hashiwa.sample'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'war'
+apply plugin: 'jetty'
+apply plugin: 'antlr'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+def displayName = 'hello-rest'
+def appPkg = 'jp.hashiwa.sample'
+def urlPattern = '/rest/*'
+//def loadOnStartup = '<load-on-startup>10</load-on-startup>'
+def loadOnStartup = ''
+def webXml =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<web-app>\n' +
+        '  <display-name>' + displayName + '</display-name>\n' +
+        '  <servlet>\n' +
+        '    <servlet-name>jersey</servlet-name>\n' +
+        '    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>\n' +
+        '    <init-param>\n' +
+        '      <param-name>jersey.config.server.provider.packages</param-name>\n' +
+        '      <param-value>' + appPkg + '</param-value>\n' +
+        '    </init-param>\n' +
+        '    ' + loadOnStartup + '\n' +
+        '  </servlet>\n' +
+        '  <servlet-mapping>\n' +
+        '    <servlet-name>jersey</servlet-name>\n' +
+        '    <url-pattern>' + urlPattern + '</url-pattern>\n' +
+        '  </servlet-mapping>\n' +
+        '</web-app>\n'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+//    compile 'org.glassfish.jersey.core:jersey-server:2.22.1'
+    compile 'org.glassfish.jersey.containers:jersey-container-servlet-core:2.22.1'
+    antlr 'org.antlr:antlr4:4.5.2-1'
+    testCompile 'junit:junit:4.12'
+}
+
+task init << {
+    // create WEB-INF
+    file('src/main/webapp/WEB-INF/classes').mkdirs()
+    file('src/main/webapp/WEB-INF/lib').mkdirs()
+
+    // create web.xml
+    File webXmlFile = file('src/main/webapp/WEB-INF/web.xml')
+    BufferedWriter bw = new BufferedWriter(new FileWriter(webXmlFile))
+    bw.withCloseable {
+        bw.write webXml
+    }
+}
+war.dependsOn init
+
+jettyRunWar {
+    httpPort = 8080
+}
+generateGrammarSource {
+    outputDirectory = new File("src/main/java/jp/hashiwa/antlr4")
+}
+
+def defaultEncoding = 'UTF-8'
+compileJava {
+    options.encoding = defaultEncoding
+}
+compileTestJava {
+    options.encoding = defaultEncoding
+//    options.properties = "-Djp.hashiwa.sample.debug=true"
+}
