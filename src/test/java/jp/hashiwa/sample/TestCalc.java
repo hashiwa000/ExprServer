@@ -50,18 +50,20 @@ public class TestCalc {
   @Test
   public void testCalcError() {
     String errorPrefix = "error";
+
+    // FIXME: unexpected stderr output [line 1:0 no viable alternative at input '<EOF>']
     Assert.assertTrue(calcObj.calc("").startsWith(errorPrefix));
+
+    // FIXME: unexpected stderr output [line 1:0 no viable alternative at input '<EOF>']
     Assert.assertTrue(calcObj.calc("1+").startsWith(errorPrefix));
 
-    // FIXME: unexpected result
-//    Assert.assertTrue(calcObj
-//            .calc(Long.toString(Integer.MAX_VALUE + 1L))
-//            .startsWith(errorPrefix));
+    Assert.assertTrue(calcObj
+            .calc(Long.toString(Integer.MAX_VALUE + 1L))
+            .startsWith(errorPrefix));
 
-    // FIXME: unexpected result
-//    Assert.assertTrue(calcObj
-//            .calc(Long.toString(Integer.MIN_VALUE - 1L))
-//            .startsWith(errorPrefix));
+    Assert.assertTrue(calcObj
+            .calc(Long.toString(Integer.MIN_VALUE - 1L))
+            .startsWith(errorPrefix));
 
     // FIXME: unexpected result
 //    System.out.println(calcObj.calc("1+2="));

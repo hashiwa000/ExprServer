@@ -39,7 +39,7 @@ public class Calc {
           @QueryParam("exp") @DefaultValue("") String exp
   ) {
     String ret = calc(exp);
-    printDebug("doGet = " + ret);
+    printDebug(getClass().getSimpleName() + ": doGet: " + ret);
     return ret;
   }
 
@@ -71,19 +71,31 @@ public class Calc {
   }
 
   protected String calc(ParseTree tree) {
-    printDebug(tree.getText());
+    String logPrefix = getClass().getSimpleName() + ": calc: ";
+
+    printDebug(logPrefix + tree.getText());
     int len = tree.getChildCount();
     if (len == 0) {
-      return ERROR + " : invalid exp [" + tree.getText() + "]";
+      String msg = ERROR + " : invalid exp [" + tree.getText() + "]";
+      printDebug(msg);
+      return msg;
     } else if (len == 1) {
       ParseTree child = tree.getChild(0);
       String text = child.getText();
       try {
         // Number is terminal, so return the value.
         int intValue = Integer.parseInt(text);
-        printDebug("return int value : " + intValue);
+        printDebug(logPrefix + "return int value : " + intValue);
         return Integer.toString(intValue);
       } catch(NumberFormatException e) {}
+
+      if (text.matches("^-?\\d+$")) {
+        // Invalid number because it is single term but cannot be parsed as Integer.
+        String msg = ERROR + " : invalid int number [" + text + "]";
+        printDebug(msg);
+        return msg;
+      }
+
       // Not number, parse the child.
       return calc(tree.getChild(0));
     } else {
@@ -98,9 +110,11 @@ public class Calc {
   }
 
   private String parse(ParseTree tree, int start, int offset) {
+    String logPrefix = getClass().getSimpleName() + ": parse: ";
+
     ParseTree firstChild = tree.getChild(start);
     String firstText = firstChild.getText();
-    printDebug("firstText : " + firstText);
+    printDebug(logPrefix + "firstText : " + firstText);
     Future<String> firstValue = resolve(firstText);
 
     List<String> operators = new ArrayList<>();
@@ -108,11 +122,11 @@ public class Calc {
     for (int i = start + 1; i < start + offset; i += 2) {
       ParseTree opChild = tree.getChild(i);
       String op = opChild.getText();
-      printDebug("operator : " + op);
+      printDebug(logPrefix + "operator : " + op);
 
       ParseTree anotherChild = tree.getChild(i+1);
       String anotherOne = anotherChild.getText();
-      printDebug("anotherOne : " + anotherOne);
+      printDebug(logPrefix + "anotherOne : " + anotherOne);
       Future<String> anotherValue = resolve(anotherOne);
 
       operators.add(op);
@@ -139,10 +153,10 @@ public class Calc {
 
       return Integer.toString(value);
     } catch (NumberFormatException e) {
-      printDebug(e);
+      printDebug(logPrefix, e);
       return ERROR + " : " + e.getLocalizedMessage();
     } catch (InterruptedException | ExecutionException e) {
-      printDebug(e);
+      printDebug(logPrefix, e);
       return ERROR + " : " + e.getLocalizedMessage();
     }
   }
@@ -153,7 +167,8 @@ public class Calc {
    * @return 式を解決した結果を表すFutureオブジェクト
    */
   protected Future<String> resolve(String exp) {
-    printDebug("resolve  : " + exp + " ...");
+    String logPrefix = getClass().getSimpleName() + ": resolve: ";
+    printDebug(logPrefix + exp);
     return executorService.submit(() -> calc(exp));
   }
 
@@ -161,10 +176,11 @@ public class Calc {
     printDebug(Integer.toString(i));
   }
   protected void printDebug(String s) {
-    if (DEBUG) System.out.println("DEBUG " + Thread.currentThread().getName() + " : " + s);
+    if (DEBUG) System.err.println("DEBUG " + Thread.currentThread().getName() + " : " + s);
   }
-  protected void printDebug(Throwable t) {
+  protected void printDebug(String logPrefix, Throwable t) {
     if (DEBUG) {
+      System.err.print(logPrefix);
       t.printStackTrace();
     }
   }
